@@ -2,7 +2,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;
-using Polly.Retry;
 using Polly.Timeout;
 using WorldEventAlerts.Api.Domain.Abstractions;
 using WorldEventAlerts.Api.Domain.Models;
@@ -22,35 +21,20 @@ public sealed class EventProcessingWorker : BackgroundService
         IEventBus eventBus,
         IAlertRuleRepository alertRuleRepository,
         INotificationLogRepository notificationLogRepository,
+        ResiliencePipeline providerPipeline,
         IEnumerable<INotificationProvider> notificationProviders,
         ILogger<EventProcessingWorker> logger)
     {
         _eventBus = eventBus;
         _alertRuleRepository = alertRuleRepository;
         _notificationLogRepository = notificationLogRepository;
+        _providerPipeline = providerPipeline;
         _logger = logger;
 
         _providersByChannel = notificationProviders
             .Where(provider => !string.IsNullOrWhiteSpace(provider.ChannelName))
             .GroupBy(provider => provider.ChannelName, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-
-        _providerPipeline = new ResiliencePipelineBuilder()
-            .AddRetry(new RetryStrategyOptions
-            {
-                MaxRetryAttempts = 3,
-                Delay = TimeSpan.FromMilliseconds(200),
-                UseJitter = true
-            })
-            .AddTimeout(TimeSpan.FromSeconds(5))
-            .AddCircuitBreaker(new CircuitBreakerStrategyOptions
-            {
-                FailureRatio = 0.5,
-                SamplingDuration = TimeSpan.FromSeconds(30),
-                MinimumThroughput = 3,
-                BreakDuration = TimeSpan.FromSeconds(10)
-            })
-            .Build();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
