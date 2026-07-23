@@ -1,24 +1,188 @@
-﻿<h1 id="tableLabel">Weather forecast</h1>
+<div class="shell">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">PoC Admin Console</p>
+      <h1>{{ title }}</h1>
+      <p class="hero-copy">
+        Monitor alert rules, notification delivery, and ingested world events from a single dashboard.
+      </p>
+    </div>
 
-<p>This component demonstrates fetching data from the server.</p>
+    <div class="hero-actions">
+      <button type="button" class="primary-button" (click)="refreshDashboard()" [disabled]="loading()">
+        {{ loading() ? 'Refreshing...' : 'Refresh dashboard' }}
+      </button>
+      <button type="button" class="secondary-button" (click)="generateSimulation()">Seed demo data</button>
+    </div>
+  </header>
 
-<p *ngIf="!forecasts"><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationangular">https://aka.ms/jspsintegrationangular</a> for more details.</em></p>
+  <section class="metrics-grid">
+    <article class="metric-card accent-1">
+      <span>Alert rules</span>
+      <strong>{{ alertRules().length }}</strong>
+      <small>{{ activeRuleCount() }} active</small>
+    </article>
+    <article class="metric-card accent-2">
+      <span>Notification logs</span>
+      <strong>{{ notificationLogs().length }}</strong>
+      <small>{{ notificationSuccessCount() }} success / {{ notificationFailureCount() }} failed</small>
+    </article>
+    <article class="metric-card accent-3">
+      <span>Event feed</span>
+      <strong>{{ eventFeedCount() }}</strong>
+      <small>Recent UI activity</small>
+    </article>
+  </section>
 
-<table *ngIf="forecasts">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Temp. (C)</th>
-            <th>Temp. (F)</th>
-            <th>Summary</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr *ngFor="let forecast of forecasts">
-            <td>{{ forecast.date }}</td>
-            <td>{{ forecast.temperatureC }}</td>
-            <td>{{ forecast.temperatureF }}</td>
-            <td>{{ forecast.summary }}</td>
-        </tr>
-    </tbody>
-</table>
+  <p class="banner error" *ngIf="error()">{{ error() }}</p>
+  <p class="banner success" *ngIf="!error() && loading()">Loading backend data...</p>
+
+  <div class="dashboard-grid">
+    <section class="panel panel-large">
+      <div class="panel-header">
+        <div>
+          <p class="section-label">Alert rule management</p>
+          <h2>{{ alertRuleDraft().id ? 'Edit alert rule' : 'Create alert rule' }}</h2>
+        </div>
+        <button type="button" class="ghost-button" (click)="resetAlertRuleDraft()">Clear form</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Name</span>
+          <input type="text" [value]="alertRuleDraft().name" (input)="updateAlertRuleDraft({ name: $any($event.target).value })" placeholder="Breaking news in EU" />
+        </label>
+        <label>
+          <span>Match expression</span>
+          <input type="text" [value]="alertRuleDraft().matchExpression" (input)="updateAlertRuleDraft({ matchExpression: $any($event.target).value })" placeholder="Breaking, Market, Disaster" />
+        </label>
+        <label class="full-width">
+          <span>Notification channels</span>
+          <input type="text" [value]="alertRuleDraft().notificationChannelsText" (input)="updateAlertRuleDraft({ notificationChannelsText: $any($event.target).value })" placeholder="Email, Slack" />
+        </label>
+        <label class="full-width">
+          <span>Description</span>
+          <textarea rows="3" [value]="alertRuleDraft().description" (input)="updateAlertRuleDraft({ description: $any($event.target).value })"></textarea>
+        </label>
+      </div>
+
+      <div class="inline-row">
+        <label class="toggle-row">
+          <input type="checkbox" [checked]="alertRuleDraft().isActive" (change)="updateAlertRuleDraft({ isActive: $any($event.target).checked })" />
+          <span>Active</span>
+        </label>
+
+        <button type="button" class="primary-button" (click)="saveAlertRule()">Save rule</button>
+      </div>
+
+      <div class="list-stack">
+        <article class="list-item" *ngFor="let rule of alertRules()">
+          <div class="list-main">
+            <div class="list-title-row">
+              <h3>{{ rule.name }}</h3>
+              <span class="pill" [class.pill-success]="rule.isActive" [class.pill-muted]="!rule.isActive">
+                {{ rule.isActive ? 'Active' : 'Paused' }}
+              </span>
+            </div>
+            <p>{{ rule.matchExpression || 'No match expression' }}</p>
+            <small>
+              Channels: {{ rule.notificationChannels.join(', ') || 'none' }}
+              <span *ngIf="rule.description"> · {{ rule.description }}</span>
+            </small>
+          </div>
+
+          <div class="list-actions">
+            <button type="button" class="ghost-button" (click)="editAlertRule(rule)">Edit</button>
+            <button type="button" class="ghost-button" (click)="toggleAlertRule(rule)">
+              {{ rule.isActive ? 'Pause' : 'Activate' }}
+            </button>
+            <button type="button" class="danger-button" (click)="deleteAlertRule(rule.id)">Delete</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel panel-side">
+      <p class="section-label">Simulation</p>
+      <h2>Generate demo data</h2>
+
+      <div class="form-grid compact">
+        <label>
+          <span>Alert rules</span>
+          <input type="number" min="0" [value]="simulationDraft().alertRules" (input)="updateSimulationDraft({ alertRules: $any($event.target).valueAsNumber })" />
+        </label>
+        <label>
+          <span>World events</span>
+          <input type="number" min="0" [value]="simulationDraft().worldEvents" (input)="updateSimulationDraft({ worldEvents: $any($event.target).valueAsNumber })" />
+        </label>
+      </div>
+
+      <button type="button" class="primary-button full-width" (click)="generateSimulation()">Seed from backend</button>
+
+      <hr />
+
+      <p class="section-label">Ingest event</p>
+      <div class="form-grid compact">
+        <label>
+          <span>Type</span>
+          <input type="text" [value]="worldEventDraft().eventType" (input)="updateWorldEventDraft({ eventType: $any($event.target).value })" />
+        </label>
+        <label>
+          <span>Source</span>
+          <input type="text" [value]="worldEventDraft().source" (input)="updateWorldEventDraft({ source: $any($event.target).value })" />
+        </label>
+        <label class="full-width">
+          <span>Payload JSON</span>
+          <textarea rows="7" [value]="worldEventDraft().payloadJson" (input)="updateWorldEventDraft({ payloadJson: $any($event.target).value })"></textarea>
+        </label>
+        <label class="full-width">
+          <span>Metadata JSON</span>
+          <textarea rows="5" [value]="worldEventDraft().metadataJson" (input)="updateWorldEventDraft({ metadataJson: $any($event.target).value })"></textarea>
+        </label>
+      </div>
+
+      <div class="inline-row">
+        <button type="button" class="secondary-button" (click)="resetWorldEventDraft()">Reset event form</button>
+        <button type="button" class="primary-button" (click)="ingestWorldEvent()">Ingest event</button>
+      </div>
+    </section>
+
+    <section class="panel panel-side">
+      <p class="section-label">Notification delivery</p>
+      <h2>Recent logs</h2>
+
+      <div class="log-list">
+        <article class="log-item" *ngFor="let log of notificationLogs()">
+          <div class="log-top">
+            <strong>{{ log.channelName }}</strong>
+            <span class="pill" [class.pill-success]="log.succeeded" [class.pill-warning]="!log.succeeded">
+              {{ log.succeeded ? 'Delivered' : 'Failed' }}
+            </span>
+          </div>
+          <p>{{ log.providerName }}</p>
+          <small>
+            Rule {{ log.alertRuleId }} · Event {{ log.worldEventId }}
+            <span *ngIf="log.errorMessage"> · {{ log.errorMessage }}</span>
+          </small>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel panel-wide">
+      <p class="section-label">Event feed</p>
+      <h2>Dashboard activity</h2>
+
+      <div class="feed-list">
+        <article class="feed-item" *ngFor="let item of eventFeed()">
+          <span class="feed-dot" [class.dot-success]="item.tone === 'success'" [class.dot-info]="item.tone === 'info'" [class.dot-warning]="item.tone === 'warning'"></span>
+          <div>
+            <strong>{{ item.title }}</strong>
+            <p>{{ item.detail }}</p>
+            <small>{{ item.timestamp | date:'medium' }}</small>
+          </div>
+        </article>
+        <p class="empty-state" *ngIf="!eventFeed().length">No activity yet. Seed demo data or ingest a world event.</p>
+      </div>
+    </section>
+  </div>
+</div>

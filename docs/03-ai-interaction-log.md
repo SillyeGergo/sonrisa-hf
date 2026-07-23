@@ -216,5 +216,16 @@ public class EventProcessingWorker : BackgroundService
 # 4. Implementáció, 1. lépés (GPT-5.4 mini)
 Generáld le a Domain modelleket (WorldEvent, AlertRule, NotificationLog) és az interfészeket (IEventBus, INotificationProvider, IAlertRuleRepository, INotificationLogRepository) a mellékelt architektúra specifikáció alapján!
 
-# 5. Implamentáció, 2. lépés (GPT-5.4 mini)
+# 5. Implementáció, 2. lépés (GPT-5.4 mini)
 Készítsd el az InMemoryAlertRuleRepository és InMemoryNotificationLogRepository implementációkat. Szigorúan használj ConcurrentDictionary-t és limitált méretű ConcurrentQueue-t!
+
+# 6. Implementáció, 3. lépés (GPT-5.4 mini)
+Tedd át a Polly resilience pipeline-t a Program.cs-be, és ott regisztráld központilag az INotificationProvider implementációkat is. Ebben a lépésben készüljenek el a hiányzó Email és Slack mock providerek, hogy a worker tényleg tudjon mit meghívni.
+
+# 7. Implementáció, 4. lépés (GPT-5.4 mini)
+Tisztítsd le és stabilizáld az API-t
+Távolítsd el a maradék scaffoldot, vagyis a weatherforecast maradványt és a duplikált simulation/mock endpointokat. Itt érdemes végigellenőrizni a cancellation tokent és a worker shutdown viselkedését is, hogy PoC szinten korrekt legyen.
+
+# 8. Implementáció, 5. lépés (GPT-5.4 mini)
+Építsd fel az Angular admin felületet
+Cseréld le a weather forecast sablont egy valódi admin dashboardra Angular Signals-szal. Legyen benne alert rule CRUD, notification log nézet és egy egyszerű event feed, ami a backend REST végpontjait hívja.
