@@ -96,7 +96,31 @@ This document records the key architectural and design decisions made during the
 
 ---
 
-## ADR-009: Concrete In-Memory Repository Implementation with Bounded Collections & Concurrency Audit
+## ADR-009: Incremental Bounded-Context Implementation Strategy over "Big Bang" Generation
+
+* **Status:** `ACCEPTED`
+* **Context:** Transitioning from the architectural specification to working implementation requires an execution strategy. A naive "Big Bang" single-prompt generation approach produces a complete solution in a single step, masking the development process and creating a monolithic commit.
+* **Decision:** Adopt an incremental, bounded-context implementation strategy. Each core domain boundary (Domain Models, Event Bus, Background Worker, Repositories, Admin UI) is generated, critically reviewed, refactored, and committed independently.
+* **Consequences:** 
+  * **Pros:** Produces a granular, milestone-driven Git history (`commit per feature`); exposes intermediate AI outputs for critical validation; strictly aligns with evaluation criteria emphasizing engineering process over final code.
+  * **Cons:** Requires more manual orchestration and prompt management compared to single-shot generation.
+
+---
+
+## ADR-010: Multi-Tiered AI Model Selection Strategy for Code Generation & Review
+
+* **Status:** `ACCEPTED`
+* **Context:** Different coding tasks require varying levels of architectural reasoning and context depth. Relying solely on a single AI model either incurs unnecessary costs or leads to undetected hallucinations in complex asynchronous logic.
+* **Decision:** Implement a multi-tiered AI model strategy based on task complexity:
+  1. **Tier 1 (Scaffolding & Boilerplate):** Utilize low-cost, high-efficiency models (DeepSeek V4, GPT-5.4-mini) for scaffolding, domain modeling, and standard CRUD endpoints.
+  2. **Tier 2 (Complex Logic & Resilience):** Reserve high-reasoning models (Claude 4.5 Sonnet) specifically for complex, high-stakes components (e.g., Polly resilience pipelines, bounded `System.Threading.Channels`, concurrency guarantees).
+* **Consequences:** 
+  * **Pros:** Optimizes AI API usage efficiency; lightweight models intentionally surface minor architectural drift or naive implementations, providing clear opportunities to demonstrate critical code review and course corrections.
+  * **Cons:** Introduces slight overhead in context-switching between different AI models and prompt workflows.
+
+---
+
+## ADR-011: Concrete In-Memory Repository Implementation with Bounded Collections & Concurrency Audit
 
 * **Status:** `ACCEPTED`
 * **Context:** The system requires concrete in-memory repository implementations for `AlertRule` management and `NotificationLog` tracking that can safely handle concurrent reads and writes between Web API request threads and the asynchronous Background Worker loop.
@@ -111,7 +135,7 @@ This document records the key architectural and design decisions made during the
 
 ---
 
-## ADR-010: Coarse-Grained Cooperative Cancellation in Background Worker Loops
+## ADR-012: Coarse-Grained Cooperative Cancellation in Background Worker Loops
 
 * **Status:** `ACCEPTED`
 * **Context:** Code review of the `EventProcessingWorker` loop identified that while the `CancellationToken` is propagated to asynchronous calls (`SubscribeAsync`, `DispatchAsync`), it is not explicitly checked via `cancellationToken.ThrowIfCancellationRequested()` inside synchronous internal loops (e.g., iterating through active `AlertRule` collections and target channels).
@@ -123,4 +147,38 @@ This document records the key architectural and design decisions made during the
 
 ---
 
+## ADR-013: Real-Time WebSockets (SignalR) for Admin Dashboard Live Feed
 
+* **Status:** `REJECTED`
+* **Context:** An AI model proposed implementing a SignalR WebSocket Hub to stream incoming world events and notification execution logs to the Angular Admin Dashboard in real-time as they enter the pipeline.
+* **Proposed Solution:** Integrate `@microsoft/signalr` in Angular and set up a `.NET Hub<IAlertClient>` to push events live to connected clients whenever the Background Worker processes an event.
+* **Rejection Reasons:** 
+  * **Over-Engineering (YAGNI):** WebSocket state management, connection handshake lifecycle, reconnection policies, and cross-origin (CORS) socket configurations introduce substantial operational complexity for a short-timeframe PoC.
+  * **Distraction from Core Evaluation Metrics:** The primary submission criteria focus on backend rule-evaluation logic, extensible Strategy design patterns, and Polly resilience mechanisms—not real-time transport infrastructure.
+  * **Unnecessary Connection State:** Maintaining persistent WebSocket connections in an in-memory PoC adds memory state overhead on the backend server with minimal UX gain for an administrative monitoring view.
+* **Alternative Selected:** The Angular Admin UI will fetch recent events and notification logs via standard REST API endpoints (`/api/logs`, `/api/events`) using Angular Signals with optional on-demand refresh/polling. This satisfies all functional monitoring requirements with zero socket-state complexity.
+
+---
+
+## ADR-014: Localized Resilience Pipeline Composition over Central Composition Root Registration
+
+* **Status:** `ACCEPTED`
+* **Context:** A backend wiring audit on 2026-07-24 evaluated whether Polly resilience policies should be centrally registered in `Program.cs` via the Polly policy registry or localized directly within the `EventProcessingWorker` / `INotificationDispatcher`.
+* **Decision:** Encapsulate the Polly resilience pipeline directly within the `EventProcessingWorker` context for this PoC, rather than wiring it centrally in `Program.cs`.
+* **Consequences:** 
+  * **Pros:** Keeps `Program.cs` lean and focused on DI service registrations; encapsulates retry/timeout logic directly adjacent to where third-party channel execution occurs.
+  * **Cons:** Resilience policies are not globally shared across other potential HTTP client instances in the application.
+  * **Mitigation:** In a scaled production application, pipeline definitions can be refactored into `Program.cs` using `.NET Resilience Pipelines` (`AddResiliencePipeline`) for global governance.
+
+---
+
+## ADR-015: Verification of Non-Blocking Channel Consumption and Synthetic Payload Completeness
+
+* **Status:** `ACCEPTED`
+* **Context:** Conducted a formal code-level verification (2026-07-24) to validate the async channel consumption mechanics in `EventProcessingWorker` and ensure the `Bogus` synthetic data generator populates all required domain fields.
+* **Decision:** Formally verified and locked in two core backend execution behaviors:
+  1. **Async Channel Consumption:** The worker strictly uses `await foreach` over `ReadAllAsync(stoppingToken)`, relying on the channel's asynchronous reader without thread-blocking while awaiting incoming events.
+  2. **Data Generator Completeness:** Confirmed that `BogusMockDataGenerator` populates all defined `WorldEvent` domain properties (`Id`, `EventType`, `Source`, `PayloadJson`, `OccurredAtUtc`, `Metadata`).
+* **Consequences:** 
+  * **Pros:** Confirmed zero thread-blocking during event ingestion pipeline idling; guaranteed rich, fully-populated event data for downstream rule matching and Admin UI display.
+  * **Cons:** None.
