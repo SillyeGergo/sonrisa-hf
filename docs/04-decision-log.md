@@ -81,3 +81,15 @@ This document records the key architectural and design decisions made during the
 * **Consequences:** 
   * **Pros:** Enables realistic end-to-end testing of complex rule matching and UI live feeds without hardcoded JSON strings.
   * **Cons:** Synthetic data generator code must be maintained alongside core logic (isolated under `/Simulations`).
+
+---
+
+## ADR-008: Thread-Safe Notification Logging & Graceful Worker Lifecycle Management
+
+* **Status:** `ACCEPTED`
+* **Context:** The Admin UI requires real-time delivery logs and success/failure statistics. Additionally, the async Background Worker must manage application lifecycle events cleanly without hanging threads or missing cancellation signals during application shutdown.
+* **Decision:** Implement an `INotificationLogRepository` backed by a size-bounded, thread-safe `ConcurrentQueue<NotificationLog>` to store audit history in-memory. Enforce mandatory `CancellationToken` propagation across the entire worker pipeline, including channel subscribers and provider dispatchers.
+* **Consequences:** 
+  * **Pros:** Guarantees auditability and delivery status tracking for the Admin UI; ensures safe concurrent access between API queries and worker writes; enables graceful application teardown without orphaned background processes.
+  * **Cons:** Log history is volatile and bounded (capped at max entry limit) to prevent memory leaks during long-running PoC sessions.
+  * **Mitigation:** The repository interface abstraction (`INotificationLogRepository`) decouples storage from business logic, allowing effortless migration to a persistent database table (e.g., PostgreSQL via EF Core) in production.
