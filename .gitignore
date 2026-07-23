@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/alert-system.client/obj
+/alert-system.client/bin
+/alert-system.Server/obj
+/alert-system.Server/bin
+/.vs/alert-system.slnx

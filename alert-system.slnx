@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="alert-system.client/alert-system.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="alert-system.Server/alert-system.Server.csproj" />
+</Solution>
