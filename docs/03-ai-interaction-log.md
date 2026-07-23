@@ -216,4 +216,5 @@ public class EventProcessingWorker : BackgroundService
 # 4. Implementáció, 1. lépés (GPT-5.4 mini)
 Generáld le a Domain modelleket (WorldEvent, AlertRule, NotificationLog) és az interfészeket (IEventBus, INotificationProvider, IAlertRuleRepository, INotificationLogRepository) a mellékelt architektúra specifikáció alapján!
 
-
+# 5. Implamentáció, 2. lépés (GPT-5.4 mini)
+Készítsd el az InMemoryAlertRuleRepository és InMemoryNotificationLogRepository implementációkat. Szigorúan használj ConcurrentDictionary-t és limitált méretű ConcurrentQueue-t!

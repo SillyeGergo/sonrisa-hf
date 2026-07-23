@@ -93,3 +93,18 @@ This document records the key architectural and design decisions made during the
   * **Pros:** Guarantees auditability and delivery status tracking for the Admin UI; ensures safe concurrent access between API queries and worker writes; enables graceful application teardown without orphaned background processes.
   * **Cons:** Log history is volatile and bounded (capped at max entry limit) to prevent memory leaks during long-running PoC sessions.
   * **Mitigation:** The repository interface abstraction (`INotificationLogRepository`) decouples storage from business logic, allowing effortless migration to a persistent database table (e.g., PostgreSQL via EF Core) in production.
+
+---
+
+## ADR-009: Concrete In-Memory Repository Implementation with Bounded Collections & Concurrency Audit
+
+* **Status:** `ACCEPTED`
+* **Context:** The system requires concrete in-memory repository implementations for `AlertRule` management and `NotificationLog` tracking that can safely handle concurrent reads and writes between Web API request threads and the asynchronous Background Worker loop.
+* **Decision:** 
+  1. Implemented `InMemoryAlertRuleRepository` using `ConcurrentDictionary<Guid, AlertRule>` for $O(1)$ thread-safe CRUD operations.
+  2. Implemented `InMemoryNotificationLogRepository` using a bounded `ConcurrentQueue<NotificationLog>` capped at 500 entries. Enqueued logs trigger automatic, non-blocking `TryDequeue` trimming when exceeding the threshold to guarantee bounded memory usage.
+  3. Conducted a dedicated code-level concurrency audit across both repository implementations to verify thread-handling behaviors, lock-free guarantees, and race-condition resistance.
+* **Consequences:** 
+  * **Pros:** Guaranteed lock-free thread safety under high concurrency; strict memory bounds preventing leaks during continuous event generation; verified compilation and clean domain integration (`dotnet build` successful).
+  * **Cons:** Audit logs beyond the 500-entry threshold are discarded (acceptable trade-off for a PoC memory model).
+  * **Concurrency Audit Findings:** Explicitly audited all concurrent access paths, lock mechanisms, and collection operations. **No thread-handling or synchronization defects were found**, confirming that `ConcurrentDictionary` and `ConcurrentQueue` appropriately isolate thread access without deadlocks or race conditions.
