@@ -1,8 +1,17 @@
+using WorldEventAlerts.Api.Domain.Abstractions;
+using WorldEventAlerts.Api.Infrastructure.Messaging;
+using WorldEventAlerts.Api.Infrastructure.Repositories;
+using WorldEventAlerts.Api.Workers;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
+builder.Services.AddSingleton<IAlertRuleRepository, InMemoryAlertRuleRepository>();
+builder.Services.AddSingleton<INotificationLogRepository, InMemoryNotificationLogRepository>();
+builder.Services.AddHostedService<EventProcessingWorker>();
 
 var app = builder.Build();
 

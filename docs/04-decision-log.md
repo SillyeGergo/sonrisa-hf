@@ -108,3 +108,19 @@ This document records the key architectural and design decisions made during the
   * **Pros:** Guaranteed lock-free thread safety under high concurrency; strict memory bounds preventing leaks during continuous event generation; verified compilation and clean domain integration (`dotnet build` successful).
   * **Cons:** Audit logs beyond the 500-entry threshold are discarded (acceptable trade-off for a PoC memory model).
   * **Concurrency Audit Findings:** Explicitly audited all concurrent access paths, lock mechanisms, and collection operations. **No thread-handling or synchronization defects were found**, confirming that `ConcurrentDictionary` and `ConcurrentQueue` appropriately isolate thread access without deadlocks or race conditions.
+
+---
+
+## ADR-010: Coarse-Grained Cooperative Cancellation in Background Worker Loops
+
+* **Status:** `ACCEPTED`
+* **Context:** Code review of the `EventProcessingWorker` loop identified that while the `CancellationToken` is propagated to asynchronous calls (`SubscribeAsync`, `DispatchAsync`), it is not explicitly checked via `cancellationToken.ThrowIfCancellationRequested()` inside synchronous internal loops (e.g., iterating through active `AlertRule` collections and target channels).
+* **Decision:** Accept coarse-grained cooperative cancellation relying on async await boundaries for application shutdown, omitting intra-loop explicit token checks for the PoC.
+* **Consequences:** 
+  * **Pros:** Simpler, cleaner worker execution logic without boilerplate cancellation checks inside fast synchronous iterations.
+  * **Cons:** Application shutdown (teardown) will only trigger at the next async await boundary, introducing minor shutdown latency if a single event matches a very large volume of alert rules.
+  * **Mitigation:** Completely acceptable trade-off for the PoC demo scale (small rule set). For production environments with thousands of matched rules per event, `cancellationToken.ThrowIfCancellationRequested()` or `Parallel.ForEachAsync` with token boundings should be implemented to ensure instant process termination.
+
+---
+
+
