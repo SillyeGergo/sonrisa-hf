@@ -7,3 +7,5 @@
 /alert-system.Server/obj
 /alert-system.Server/bin
 /.vs/alert-system.slnx
+/WorldEventAlerts.Api/bin
+/WorldEventAlerts.Api/obj

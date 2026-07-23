@@ -212,3 +212,8 @@ public class EventProcessingWorker : BackgroundService
         return worldEvent.Severity >= rule.MinSeverity;
     }
 }
+
+# 4. Implementáció, 1. lépés (GPT-5.4 mini)
+Generáld le a Domain modelleket (WorldEvent, AlertRule, NotificationLog) és az interfészeket (IEventBus, INotificationProvider, IAlertRuleRepository, INotificationLogRepository) a mellékelt architektúra specifikáció alapján!
+
+
