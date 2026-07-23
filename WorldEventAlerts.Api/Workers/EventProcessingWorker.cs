@@ -41,6 +41,8 @@ public sealed class EventProcessingWorker : BackgroundService
     {
         await foreach (var worldEvent in _eventBus.ReadAllAsync(stoppingToken))
         {
+            stoppingToken.ThrowIfCancellationRequested();
+
             try
             {
                 await ProcessEventAsync(worldEvent, stoppingToken);
@@ -58,6 +60,8 @@ public sealed class EventProcessingWorker : BackgroundService
 
     private async Task ProcessEventAsync(WorldEvent worldEvent, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var alertRules = await _alertRuleRepository.GetAllAsync(cancellationToken);
         var matchingAlertRules = alertRules
             .Where(alertRule => alertRule.IsActive && Matches(alertRule, worldEvent))
@@ -65,12 +69,16 @@ public sealed class EventProcessingWorker : BackgroundService
 
         foreach (var alertRule in matchingAlertRules)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             await DispatchAlertRuleAsync(worldEvent, alertRule, cancellationToken);
         }
     }
 
     private async Task DispatchAlertRuleAsync(WorldEvent worldEvent, AlertRule alertRule, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (alertRule.NotificationChannels.Count == 0)
         {
             _logger.LogWarning("Alert rule {AlertRuleId} has no notification channels configured", alertRule.Id);
@@ -79,6 +87,8 @@ public sealed class EventProcessingWorker : BackgroundService
 
         foreach (var channelName in alertRule.NotificationChannels)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (!_providersByChannel.TryGetValue(channelName, out var provider))
             {
                 _logger.LogWarning(
