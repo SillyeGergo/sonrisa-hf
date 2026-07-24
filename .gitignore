@@ -9,3 +9,6 @@
 /.vs/alert-system.slnx
 /WorldEventAlerts.Api/bin
 /WorldEventAlerts.Api/obj
+/.cr
+/.vs
+/WorldEventAlerts.Api/.cr/personal/FavoritesList
