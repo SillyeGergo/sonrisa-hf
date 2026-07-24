@@ -229,3 +229,6 @@ Távolítsd el a maradék scaffoldot, vagyis a weatherforecast maradványt és a
 # 8. Implementáció, 5. lépés (GPT-5.4 mini)
 Építsd fel az Angular admin felületet
 Cseréld le a weather forecast sablont egy valódi admin dashboardra Angular Signals-szal. Legyen benne alert rule CRUD, notification log nézet és egy egyszerű event feed, ami a backend REST végpontjait hívja.
+
+# 9. Felesleges fájlok eltávolítása
+Távolítsd el az alert system servert, ne maradjon felesleges kód meg fájl, amit nem használunk.

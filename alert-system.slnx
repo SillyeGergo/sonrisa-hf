@@ -3,5 +3,5 @@
     <Build />
     <Deploy />
   </Project>
-  <Project Path="alert-system.Server/alert-system.Server.csproj" />
+  <Project Path="WorldEventAlerts.Api/WorldEventAlerts.Api.csproj" />
 </Solution>

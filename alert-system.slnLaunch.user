@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "WorldEventAlerts.Api\\WorldEventAlerts.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "alert-system.client\\alert-system.client.esproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

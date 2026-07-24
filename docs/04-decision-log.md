@@ -182,3 +182,14 @@ This document records the key architectural and design decisions made during the
 * **Consequences:** 
   * **Pros:** Confirmed zero thread-blocking during event ingestion pipeline idling; guaranteed rich, fully-populated event data for downstream rule matching and Admin UI display.
   * **Cons:** None.
+
+---
+
+## ADR-016: Removal of Redundant Boilerplate Project (`alert-system.server`)
+
+* **Status:** `ACCEPTED`
+* **Context:** An AI code review flagged the presence of an unused/redundant scaffolding project directory (`alert-system.server`) that was generated during initial project setup alongside the primary backend project (`WorldEventAlerts.Api`).
+* **Decision:** Accept the AI recommendation to completely purge the unused `alert-system.server` directory and consolidate all backend Web API logic, background workers, and endpoints strictly within `WorldEventAlerts.Api`.
+* **Consequences:** 
+  * **Pros:** Removes dead code and repository clutter; eliminates confusion during build/restore steps (`dotnet build`); ensures a clean, single-responsibility backend solution structure.
+  * **Cons:** None.
