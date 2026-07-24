@@ -6,7 +6,17 @@ public sealed record NotificationLog
 
     public Guid AlertRuleId { get; init; }
 
+    public string AlertRuleName { get; init; } = string.Empty;
+
+    public string AlertBody { get; init; } = string.Empty;
+
     public Guid WorldEventId { get; init; }
+
+    public string WorldEventTitle { get; init; } = string.Empty;
+
+    public string WorldEventSource { get; init; } = string.Empty;
+
+    public string PayloadJson { get; init; } = string.Empty;
 
     public string ProviderName { get; init; } = string.Empty;
 

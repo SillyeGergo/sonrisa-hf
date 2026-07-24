@@ -193,3 +193,26 @@ This document records the key architectural and design decisions made during the
 * **Consequences:** 
   * **Pros:** Removes dead code and repository clutter; eliminates confusion during build/restore steps (`dotnet build`); ensures a clean, single-responsibility backend solution structure.
   * **Cons:** None.
+
+---
+
+## ADR-017: Make notification channels selector to use checkbox to avoid incorrect channels
+* **Status:** `ACCEPTED`
+* **Context:** The AI generated the form so the user needs to type the exact channel types.
+* **Decision:** This is not good. To avoid the selection of non-existing channels, I need to modify the channel selector to be a selextbox list.
+* **Consequences:** 
+  * **Pros:** Reduces the failed notification alerts.
+  * **Cons:** None.
+
+---
+
+## ADR-018: Segregation of User-Facing and Admin-Facing UI Views
+
+* **Status:** `ACCEPTED`
+* **Context:** Initial AI generation produced a monolithic Angular component that combined both end-user alert configuration controls and administrative system monitoring (event feed, delivery logs) into a single page view.
+* **Decision:** Reject the monolithic view and instruct the AI to refactor the Angular frontend into distinct, decoupled components and views:
+  1. **User View:** Focused strictly on user-relevant actions (configuring, enabling, and managing alert rules).
+  2. **Admin View:** Focused on system governance, event feed monitoring, global rule auditing, and notification delivery execution logs.
+* **Consequences:** 
+  * **Pros:** Strictly enforces Separation of Concerns (SoC) and Single Responsibility Principle (SRP) at the UI level; simplifies Angular component testing; prepares the frontend for future Role-Based Access Control (RBAC) routing without refactoring core views.
+  * **Cons:** Slightly increases component boilerplate and route configuration in the Angular application.

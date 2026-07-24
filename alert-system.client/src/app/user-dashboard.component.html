@@ -1,0 +1,183 @@
+<section class="metrics-grid">
+  <article class="metric-card accent-1">
+    <span>Alert rules</span>
+    <strong>{{ alertRules().length }}</strong>
+    <small>{{ activeRuleCount() }} active</small>
+  </article>
+  <article class="metric-card accent-2">
+    <span>Recent alerts</span>
+    <strong>{{ recentAlertCount() }}</strong>
+    <small>Latest notification attempts</small>
+  </article>
+  <article class="metric-card accent-3">
+    <span>Status</span>
+    <strong>Rules</strong>
+    <small>Manage notification preferences</small>
+  </article>
+</section>
+
+<p class="banner error" *ngIf="error()">{{ error() }}</p>
+<p class="banner success" *ngIf="!error() && loading()">Loading rules...</p>
+
+<div class="dashboard-grid">
+  <section class="panel panel-large">
+    <div class="panel-header">
+      <div>
+        <p class="section-label">User page</p>
+        <h2>{{ alertRuleDraft().id ? 'Edit your alert rule' : 'Create your alert rule' }}</h2>
+      </div>
+      <button type="button" class="ghost-button" (click)="resetAlertRuleDraft()">Clear form</button>
+    </div>
+
+    <div class="form-grid">
+      <label>
+        <span>Name</span>
+        <input type="text" [value]="alertRuleDraft().name" (input)="updateAlertRuleDraft({ name: $any($event.target).value })" placeholder="Breaking news in EU" />
+      </label>
+      <label>
+        <span>Match expression</span>
+        <input type="text" [value]="alertRuleDraft().matchExpression" (input)="updateAlertRuleDraft({ matchExpression: $any($event.target).value })" placeholder="Breaking, Market, Disaster" />
+      </label>
+      <div class="full-width">
+        <span>Notification channels</span>
+        <div class="channel-grid" style="display:flex; flex-wrap:wrap; gap:.75rem; padding:.25rem 0;">
+          <label class="toggle-row" *ngFor="let channel of availableChannels">
+            <input type="checkbox" [checked]="isNotificationChannelSelected(channel)" (change)="toggleNotificationChannel(channel)" />
+            <span>{{ channel }}</span>
+          </label>
+        </div>
+      </div>
+      <label class="full-width">
+        <span>Description</span>
+        <textarea rows="3" [value]="alertRuleDraft().description" (input)="updateAlertRuleDraft({ description: $any($event.target).value })"></textarea>
+      </label>
+    </div>
+
+    <div class="inline-row">
+      <label class="toggle-row">
+        <input type="checkbox" [checked]="alertRuleDraft().isActive" (change)="updateAlertRuleDraft({ isActive: $any($event.target).checked })" />
+        <span>Active</span>
+      </label>
+
+      <button type="button" class="primary-button" (click)="saveAlertRule()">Save rule</button>
+    </div>
+
+    <div class="list-stack">
+      <article class="list-item" *ngFor="let rule of alertRules()">
+        <div class="list-main">
+          <div class="list-title-row">
+            <h3>{{ rule.name }}</h3>
+            <span class="pill" [class.pill-success]="rule.isActive" [class.pill-muted]="!rule.isActive">
+              {{ rule.isActive ? 'Active' : 'Paused' }}
+            </span>
+          </div>
+          <p>{{ rule.matchExpression || 'No match expression' }}</p>
+          <small>
+            Channels: {{ rule.notificationChannels.join(', ') || 'none' }}
+            <span *ngIf="rule.description"> · {{ rule.description }}</span>
+          </small>
+        </div>
+
+        <div class="list-actions">
+          <button type="button" class="ghost-button" (click)="editAlertRule(rule)">Edit</button>
+          <button type="button" class="ghost-button" (click)="toggleAlertRule(rule)">
+            {{ rule.isActive ? 'Pause' : 'Activate' }}
+          </button>
+          <button type="button" class="danger-button" (click)="deleteAlertRule(rule.id)">Delete</button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="panel panel-side">
+    <p class="section-label">Recent alerts</p>
+    <h2>Notifications</h2>
+
+    <div class="log-list">
+      <article class="log-item" *ngFor="let log of notificationLogs()" style="cursor:pointer;" (click)="openNotificationDetails(log)">
+        <div class="log-top">
+          <strong>{{ log.alertRuleName || 'Untitled alert' }}</strong>
+          <span class="pill" [class.pill-success]="log.succeeded" [class.pill-warning]="!log.succeeded">
+            {{ log.succeeded ? 'Delivered' : 'Failed' }}
+          </span>
+        </div>
+        <p>{{ log.alertBody }}</p>
+        <small>
+          {{ log.channelName }} via {{ log.providerName }}
+          <span *ngIf="log.worldEventTitle"> · {{ log.worldEventTitle }} · {{ log.worldEventSource }}</span>
+          <span *ngIf="log.errorMessage"> · {{ log.errorMessage }}</span>
+        </small>
+      </article>
+      <p class="empty-state" *ngIf="!notificationLogs().length">No alerts have been delivered yet.</p>
+    </div>
+  </section>
+</div>
+
+<div
+  *ngIf="selectedNotification() as selectedNotification"
+  style="position:fixed; inset:0; z-index:1000; background:rgba(2,6,23,.72); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:1rem;"
+  (click)="closeNotificationDetails()"
+>
+  <div
+    style="width:min(720px, 100%); border:1px solid rgba(148,163,184,.18); border-radius:24px; background:rgba(15,23,42,.96); box-shadow:0 30px 80px rgba(0,0,0,.45); padding:1.25rem;"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="panel-header" style="margin-bottom:1rem;">
+      <div>
+        <p class="section-label">Notification details</p>
+        <h2>{{ selectedNotification.alertRuleName || 'Untitled alert' }}</h2>
+      </div>
+      <button type="button" class="ghost-button" (click)="closeNotificationDetails()">Close</button>
+    </div>
+
+    <div class="form-grid compact" style="grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1rem;">
+      <div class="metric-card" style="padding:1rem;">
+        <span>Type</span>
+        <strong style="font-size:1.15rem;">{{ selectedNotification.worldEventTitle }}</strong>
+      </div>
+      <div class="metric-card" style="padding:1rem;">
+        <span>Source</span>
+        <strong style="font-size:1.15rem;">{{ selectedNotification.worldEventSource }}</strong>
+      </div>
+      <div class="metric-card" style="padding:1rem; grid-column:1/-1;">
+        <span>Body</span>
+        <strong style="font-size:1.15rem; line-height:1.45; white-space:pre-wrap;">{{ selectedNotification.alertBody }}</strong>
+      </div>
+          <div class="metric-card" style="padding:1rem;">
+            <span>Status</span>
+            <strong style="font-size:1.15rem;">{{ selectedNotification.succeeded ? 'Delivered' : 'Failed' }}</strong>
+          </div>
+          <div class="metric-card" style="padding:1rem;">
+            <span>Channel</span>
+            <strong style="font-size:1.15rem;">{{ selectedNotification.channelName }}</strong>
+          </div>
+          <div class="metric-card" style="padding:1rem;">
+            <span>Provider</span>
+            <strong style="font-size:1.15rem;">{{ selectedNotification.providerName }}</strong>
+          </div>
+          <div class="metric-card" style="padding:1rem;">
+            <span>Attempted</span>
+            <strong style="font-size:1.05rem;">{{ selectedNotification.attemptedAtUtc | date:'medium' }}</strong>
+          </div>
+          <div class="metric-card" style="padding:1rem;">
+            <span>Completed</span>
+            <strong style="font-size:1.05rem;">{{ selectedNotification.completedAtUtc ? (selectedNotification.completedAtUtc | date:'medium') : 'Pending' }}</strong>
+          </div>
+
+          <div class="metric-card" style="padding:1rem; grid-column:1/-1;">
+            <span>Payload</span>
+            <div class="form-grid compact" style="margin-top:.75rem; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.75rem;">
+              <div *ngFor="let field of getPayloadFields(selectedNotification)" class="metric-card" style="padding:1rem; background:rgba(8,15,30,.72);">
+                <span>{{ field.label }}</span>
+                <strong style="font-size:1.05rem; line-height:1.45; white-space:pre-wrap;">{{ field.value }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card" *ngIf="selectedNotification.errorMessage" style="padding:1rem; grid-column:1/-1;">
+            <span>Error</span>
+            <strong style="font-size:1.05rem; line-height:1.45;">{{ selectedNotification.errorMessage }}</strong>
+          </div>
+    </div>
+  </div>
+</div>

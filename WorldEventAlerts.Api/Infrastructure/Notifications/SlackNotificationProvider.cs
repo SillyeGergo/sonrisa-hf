@@ -20,12 +20,22 @@ public sealed class SlackNotificationProvider : INotificationProvider
         return new NotificationLog
         {
             AlertRuleId = alertRule.Id,
+            AlertRuleName = alertRule.Name,
+            AlertBody = BuildAlertBody(worldEvent, alertRule),
             WorldEventId = worldEvent.Id,
+            WorldEventTitle = worldEvent.EventType,
+            WorldEventSource = worldEvent.Source,
+            PayloadJson = worldEvent.PayloadJson,
             ChannelName = ChannelName,
             ProviderName = nameof(SlackNotificationProvider),
             Succeeded = true,
             AttemptedAtUtc = DateTimeOffset.UtcNow,
             CompletedAtUtc = DateTimeOffset.UtcNow
         };
+    }
+
+    private static string BuildAlertBody(WorldEvent worldEvent, AlertRule alertRule)
+    {
+        return $"{alertRule.Name}: {worldEvent.EventType} from {worldEvent.Source}";
     }
 }

@@ -232,3 +232,22 @@ Cseréld le a weather forecast sablont egy valódi admin dashboardra Angular Sig
 
 # 9. Felesleges fájlok eltávolítása
 Távolítsd el az alert system servert, ne maradjon felesleges kód meg fájl, amit nem használunk.
+
+# 10. Feladat pontosítása
+A jelenlegi UI egyetlen screent tartalmaz, ahol alert ruleokat lehet beállítani, logokat látni és adatot generálni. Ez nem teljesen az, amire elsőre gondoltam. 
+
+A konkrét brief:
+"We want users to be able to set up alerts so they get notified when
+something important happens in the world — like breaking news, market
+movements, natural disasters, that kind of thing. Should work for both email
+and Slack. Make it flexible enough that we can add more channels later.
+We need an admin view too."
+
+Az én értelmezésem szerint ezt két részre kéne szedni: 
+- Egy admin screen, ahol logokat látunk és generálni tudunk world eventeket
+- Egy user screen, ahol a userek alert ruleokat állíthatnak be és az alapján kapnak értesítéseket
+
+Tervezd meg ennek a kivitelezését!
+
+# 11. Implementáció
+A tervet átnéztem, jónak tűnik, kezdd el a kivitelezést!

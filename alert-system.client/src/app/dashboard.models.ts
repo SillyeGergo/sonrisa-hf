@@ -14,7 +14,7 @@ export interface AlertRuleDraft {
   name: string;
   isActive: boolean;
   matchExpression: string;
-  notificationChannelsText: string;
+  notificationChannels: string[];
   description: string;
 }
 
@@ -37,7 +37,12 @@ export interface WorldEventDraft {
 export interface NotificationLog {
   id: string;
   alertRuleId: string;
+  alertRuleName: string;
+  alertBody: string;
   worldEventId: string;
+  worldEventTitle: string;
+  worldEventSource: string;
+  payloadJson: string;
   providerName: string;
   channelName: string;
   succeeded: boolean;
@@ -71,7 +76,7 @@ export const createEmptyAlertRuleDraft = (): AlertRuleDraft => ({
   name: '',
   isActive: true,
   matchExpression: '',
-  notificationChannelsText: 'Email, Slack',
+  notificationChannels: ['Email', 'Slack'],
   description: ''
 });
 

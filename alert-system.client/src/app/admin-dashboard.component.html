@@ -1,0 +1,85 @@
+<section class="metrics-grid">
+  <article class="metric-card accent-1">
+    <span>Notification logs</span>
+    <strong>{{ notificationLogs().length }}</strong>
+    <small>{{ notificationSuccessCount() }} success / {{ notificationFailureCount() }} failed</small>
+  </article>
+  <article class="metric-card accent-2">
+    <span>Workspace</span>
+    <strong>Admin</strong>
+    <small>Generate world events and review logs</small>
+  </article>
+  <article class="metric-card accent-3">
+    <span>Mode</span>
+    <strong>Logs</strong>
+    <small>Scrollable delivery history</small>
+  </article>
+</section>
+
+<p class="banner error" *ngIf="error()">{{ error() }}</p>
+<p class="banner success" *ngIf="!error() && loading()">Loading backend data...</p>
+
+<div class="dashboard-grid">
+  <section class="panel panel-side">
+    <p class="section-label">Admin page</p>
+    <h2>Generate world events</h2>
+
+    <div class="inline-row">
+      <button type="button" class="secondary-button" style="padding:.55rem .85rem; font-size:.92rem;" (click)="refreshDashboard()">Refresh logs</button>
+      <button type="button" class="primary-button" style="padding:.55rem .85rem; font-size:.92rem;" (click)="generateWorldEvents()">Generate world events</button>
+    </div>
+
+    <div class="form-grid compact">
+      <label>
+        <span>World events</span>
+        <input type="number" min="0" [value]="worldEventGenerationCount()" (input)="updateWorldEventGenerationCount($any($event.target).valueAsNumber)" />
+      </label>
+    </div>
+
+    <p class="section-label">Ingest event</p>
+    <div class="form-grid compact">
+      <label>
+        <span>Type</span>
+        <input type="text" [value]="worldEventDraft().eventType" (input)="updateWorldEventDraft({ eventType: $any($event.target).value })" />
+      </label>
+      <label>
+        <span>Source</span>
+        <input type="text" [value]="worldEventDraft().source" (input)="updateWorldEventDraft({ source: $any($event.target).value })" />
+      </label>
+      <label class="full-width">
+        <span>Payload JSON</span>
+        <textarea rows="7" [value]="worldEventDraft().payloadJson" (input)="updateWorldEventDraft({ payloadJson: $any($event.target).value })"></textarea>
+      </label>
+      <label class="full-width">
+        <span>Metadata JSON</span>
+        <textarea rows="5" [value]="worldEventDraft().metadataJson" (input)="updateWorldEventDraft({ metadataJson: $any($event.target).value })"></textarea>
+      </label>
+    </div>
+
+    <div class="inline-row">
+      <button type="button" class="secondary-button" (click)="resetWorldEventDraft()">Reset event form</button>
+      <button type="button" class="primary-button" (click)="ingestWorldEvent()">Ingest event</button>
+    </div>
+  </section>
+
+  <section class="panel panel-side">
+    <p class="section-label">Notification delivery</p>
+    <h2>Recent logs</h2>
+
+    <div class="log-list" style="max-height:32rem; overflow:auto; padding-right:.25rem;">
+      <article class="log-item" *ngFor="let log of notificationLogs()">
+        <div class="log-top">
+          <strong>{{ log.alertRuleName || 'Untitled alert' }}</strong>
+          <span class="pill" [class.pill-success]="log.succeeded" [class.pill-warning]="!log.succeeded">
+            {{ log.succeeded ? 'Delivered' : 'Failed' }}
+          </span>
+        </div>
+        <p>{{ log.alertBody }}</p>
+        <small>
+          {{ log.channelName }} via {{ log.providerName }} · {{ log.worldEventTitle }} · {{ log.worldEventSource }}
+          <span *ngIf="log.errorMessage"> · {{ log.errorMessage }}</span>
+        </small>
+      </article>
+    </div>
+  </section>
+</div>
